@@ -1,15 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Otter AR Demo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
-</head>
-<body>
-  <script type="module" src="main.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>WebXR Otter</title>
+
+    <!-- ✅ Three.js 核心库 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+
+    <!-- ✅ GLTF 模型加载器 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <!-- ✅ WebXR 支持（可选：XRButton、AR） -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/webxr/ARButton.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ✅ 你可以加加载提示或按钮（可选） -->
+
+    <!-- ✅ 你的主脚本 -->
+    <script src="main.js"></script>
+  </body>
 </html>
