@@ -5,11 +5,41 @@
   <title>Otter AR Test</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
     canvas { display: block; }
+
+    #infoBox {
+      display: none;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      max-width: 280px;
+      z-index: 10;
+    }
+
+    #closeBtn {
+      float: right;
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: #555;
+    }
   </style>
 </head>
 <body>
+  <!-- Info Box -->
+  <div id="infoBox">
+    <button id="closeBtn" onclick="document.getElementById('infoBox').style.display='none'">×</button>
+    <strong>Otter Info</strong>
+    <p>This is an interactive otter. More details will appear here.</p>
+  </div>
+
+  <!-- Main JS -->
   <script type="module" src="./main.js"></script>
 </body>
 </html>
