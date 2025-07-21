@@ -33,6 +33,17 @@
       color: #eee;
     }
 
+    .char {
+      opacity: 0;
+      display: inline-block;
+      animation: fadeIn 0.4s forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     #popupOverlay {
       display: none;
       position: fixed;
@@ -92,8 +103,8 @@
     </div>
   </div>
 
-  <!-- Audio (hidden) -->
-  <audio id="narrationAudio" src=""></audio>
+  <!-- Audio -->
+  <audio id="narrationAudio" src="./assets/audio/node1.mp3"></audio>
 
   <!-- Main JS -->
   <script type="module" src="./main.js"></script>
