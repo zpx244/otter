@@ -4,39 +4,14 @@ import { ARButton } from './libs/ARButton.js';
 let camera, scene, renderer, controller, reticle, cube;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
+
 const infoBoxEl = document.getElementById('infoBox');
 const narrationEl = document.getElementById('narrationText');
 const buttonBox = document.getElementById('extraButtons');
 const audioEl = document.getElementById('narrationAudio');
 
-// ---- Define narration text/audio steps ----
-const narrationSteps = [
-  {
-    text: "The first light of day breaks over rooftops. Beneath the brambles, I stir.",
-    audio: "./assets/audio/step1.mp3",
-    duration: 4000
-  },
-  {
-    text: "My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows.",
-    audio: "./assets/audio/step2.mp3",
-    duration: 4000
-  },
-  {
-    text: "The stream here is narrow, but it smells of life—earth, leaf, dew.",
-    audio: "./assets/audio/step3.mp3",
-    duration: 4000
-  },
-  {
-    text: "I slide into the water. Today, like every day, I must patrol, mark, and feed.",
-    audio: "./assets/audio/step4.mp3",
-    duration: 5000
-  },
-  {
-    text: "The city is loud, but I know where to listen. This river is mine. For now.",
-    audio: "./assets/audio/step5.mp3",
-    duration: 5000
-  }
-];
+// narration text
+const narrationText = `The first light of day breaks over rooftops. Beneath the brambles, I stir. My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows. The stream here is narrow, but it smells of life—earth, leaf, dew. I slide into the water. Today, like every day, I must patrol, mark, and feed. The city is loud, but I know where to listen. This river is mine. For now.`;
 
 init();
 
@@ -89,37 +64,38 @@ function onSelect() {
   infoBoxEl.style.display = 'block';
   narrationEl.innerHTML = '';
   buttonBox.style.display = 'none';
-  playNarrationSequence();
+
+  playNarrationWithChars();
 }
 
-function playNarrationSequence() {
+function playNarrationWithChars() {
+  const chars = narrationText.split('');
   let index = 0;
+  audioEl.play();
 
-  function playNext() {
-    if (index >= narrationSteps.length) {
+  function showNextChar() {
+    if (index < chars.length) {
+      const span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = chars[index];
+      narrationEl.appendChild(span);
+      index++;
+      setTimeout(showNextChar, audioEl.duration * 1000 / chars.length);
+    } else {
+      // when done, show buttons
       buttonBox.innerHTML = `
         <button onclick="showPopup('holt')">What’s a Holt?</button>
         <button onclick="showPopup('fact')">Did You Know?</button>
       `;
       buttonBox.style.display = 'block';
-      return;
     }
-
-    const step = narrationSteps[index];
-    narrationEl.innerHTML += `<p>${step.text}</p>`;
-    audioEl.src = step.audio;
-    audioEl.play();
-
-    index++;
-    setTimeout(playNext, step.duration + 500);
   }
 
-  playNext();
+  showNextChar();
 }
 
 function render(timestamp, frame) {
   const session = renderer.xr.getSession();
-
   if (session && !hitTestSourceRequested) {
     session.requestReferenceSpace('viewer').then((refSpace) => {
       session.requestHitTestSource({ space: refSpace }).then((source) => {
@@ -149,11 +125,10 @@ function render(timestamp, frame) {
   }
 
   if (cube) cube.position.z -= 0.002;
-
   renderer.render(scene, camera);
 }
 
-// ---------------- popup ----------------
+// --- popup ---
 window.showPopup = function(type) {
   const popup = document.getElementById('popupOverlay');
   const content = document.getElementById('popupText');
