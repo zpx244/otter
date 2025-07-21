@@ -10,7 +10,7 @@ const narrationEl = document.getElementById('narrationText');
 const buttonBox = document.getElementById('extraButtons');
 const audioEl = document.getElementById('narrationAudio');
 
-// narration text
+// Narration full text
 const narrationText = `The first light of day breaks over rooftops. Beneath the brambles, I stir. My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows. The stream here is narrow, but it smells of life—earth, leaf, dew. I slide into the water. Today, like every day, I must patrol, mark, and feed. The city is loud, but I know where to listen. This river is mine. For now.`;
 
 init();
@@ -64,25 +64,28 @@ function onSelect() {
   infoBoxEl.style.display = 'block';
   narrationEl.innerHTML = '';
   buttonBox.style.display = 'none';
-
-  playNarrationWithChars();
+  playNarrationWithWords();
 }
 
-function playNarrationWithChars() {
-  const chars = narrationText.split('');
+function playNarrationWithWords() {
+  const words = narrationText.split(' ');
   let index = 0;
+  narrationEl.innerHTML = '';
   audioEl.play();
 
-  function showNextChar() {
-    if (index < chars.length) {
+  function showNextWord() {
+    if (index < words.length) {
       const span = document.createElement('span');
       span.className = 'char';
-      span.textContent = chars[index];
+      span.textContent = words[index] + ' ';
       narrationEl.appendChild(span);
       index++;
-      setTimeout(showNextChar, audioEl.duration * 1000 / chars.length);
+
+      const duration = audioEl.duration || 30; // fallback to 30s
+      const delay = (duration * 1000) / words.length;
+      setTimeout(showNextWord, delay);
     } else {
-      // when done, show buttons
+      // narration finished, show popup buttons
       buttonBox.innerHTML = `
         <button onclick="showPopup('holt')">What’s a Holt?</button>
         <button onclick="showPopup('fact')">Did You Know?</button>
@@ -91,11 +94,17 @@ function playNarrationWithChars() {
     }
   }
 
-  showNextChar();
+  // Wait for metadata to load if needed
+  if (audioEl.readyState >= 2) {
+    showNextWord();
+  } else {
+    audioEl.onloadedmetadata = showNextWord;
+  }
 }
 
 function render(timestamp, frame) {
   const session = renderer.xr.getSession();
+
   if (session && !hitTestSourceRequested) {
     session.requestReferenceSpace('viewer').then((refSpace) => {
       session.requestHitTestSource({ space: refSpace }).then((source) => {
@@ -125,10 +134,11 @@ function render(timestamp, frame) {
   }
 
   if (cube) cube.position.z -= 0.002;
+
   renderer.render(scene, camera);
 }
 
-// --- popup ---
+// ---------------- popup ----------------
 window.showPopup = function(type) {
   const popup = document.getElementById('popupOverlay');
   const content = document.getElementById('popupText');
