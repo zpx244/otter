@@ -5,8 +5,15 @@
   <title>Otter AR – Node 1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { margin: 0; overflow: hidden; font-family: 'Helvetica Neue', sans-serif; }
-    canvas { display: block; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Helvetica Neue', sans-serif;
+    }
+
+    canvas {
+      display: block;
+    }
 
     #infoBox {
       display: none;
@@ -20,7 +27,7 @@
       border-radius: 12px;
       color: #fff;
       font-size: 15px;
-      line-height: 1.5;
+      line-height: 1.6;
       z-index: 10;
     }
 
@@ -33,24 +40,14 @@
       color: #eee;
     }
 
-    .char {
-      opacity: 0;
-      display: inline-block;
-      animation: fadeIn 0.4s forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
     #popupOverlay {
       display: none;
       position: fixed;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0,0,0,0.4);
+      background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(4px);
       z-index: 20;
       align-items: center;
@@ -58,11 +55,11 @@
     }
 
     #popupContent {
-      background: rgba(255,255,255,0.95);
+      background: rgba(255, 255, 255, 0.95);
       padding: 20px;
       border-radius: 10px;
       max-width: 300px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       color: #222;
     }
 
@@ -84,6 +81,23 @@
       font-size: 14px;
       cursor: pointer;
     }
+
+    .char {
+      opacity: 0;
+      display: inline-block;
+      animation: fadeIn 0.4s forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
 </head>
 <body>
@@ -91,7 +105,7 @@
   <div id="infoBox">
     <button id="closeBtn" onclick="document.getElementById('infoBox').style.display='none'">×</button>
     <strong>Blackpool Headwaters – Morning Departure</strong>
-    <div id="narrationText"></div>
+    <div id="narrationText" style="margin-top: 8px;"></div>
     <div id="extraButtons" style="display:none; margin-top:12px;"></div>
   </div>
 
@@ -103,7 +117,7 @@
     </div>
   </div>
 
-  <!-- Audio -->
+  <!-- Audio (hidden) -->
   <audio id="narrationAudio" src="./assets/audio/node1.mp3"></audio>
 
   <!-- Main JS -->
