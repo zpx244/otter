@@ -10,9 +10,10 @@ const narrationEl = document.getElementById('narrationText');
 const buttonBox = document.getElementById('extraButtons');
 const audioEl = document.getElementById('narrationAudio');
 
-// Narration full text
+// --- Full paragraph text (split by word) ---
 const narrationText = `The first light of day breaks over rooftops. Beneath the brambles, I stir. My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows. The stream here is narrow, but it smells of life—earth, leaf, dew. I slide into the water. Today, like every day, I must patrol, mark, and feed. The city is loud, but I know where to listen. This river is mine. For now.`;
 
+// -------------------------------------- INIT --------------------------------------
 init();
 
 function init() {
@@ -50,6 +51,8 @@ function init() {
   renderer.setAnimationLoop(render);
 }
 
+// -------------------------------------- SELECT --------------------------------------
+
 function onSelect() {
   if (!reticle.visible || cube) return;
 
@@ -64,43 +67,47 @@ function onSelect() {
   infoBoxEl.style.display = 'block';
   narrationEl.innerHTML = '';
   buttonBox.style.display = 'none';
-  playNarrationWithWords();
+
+  playNarrationByWord(narrationText, './assets/audio/node1.mp3');
 }
 
-function playNarrationWithWords() {
-  const words = narrationText.split(' ');
-  let index = 0;
-  narrationEl.innerHTML = '';
+// -------------------------------------- TYPEWRITER: BY WORD --------------------------------------
+
+function playNarrationByWord(fullText, audioPath) {
+  const words = fullText.split(' ');
+  let i = 0;
+
+  audioEl.src = audioPath;
   audioEl.play();
 
-  function showNextWord() {
-    if (index < words.length) {
+  const interval = 350; // time per word in ms
+  const timer = setInterval(() => {
+    if (i < words.length) {
       const span = document.createElement('span');
       span.className = 'char';
-      span.textContent = words[index] + ' ';
+      span.textContent = words[i] + ' ';
       narrationEl.appendChild(span);
-      index++;
-
-      const duration = audioEl.duration || 30; // fallback to 30s
-      const delay = (duration * 1000) / words.length;
-      setTimeout(showNextWord, delay);
+      i++;
     } else {
-      // narration finished, show popup buttons
-      buttonBox.innerHTML = `
-        <button onclick="showPopup('holt')">What’s a Holt?</button>
-        <button onclick="showPopup('fact')">Did You Know?</button>
-      `;
-      buttonBox.style.display = 'block';
+      clearInterval(timer);
     }
-  }
+  }, interval);
 
-  // Wait for metadata to load if needed
-  if (audioEl.readyState >= 2) {
-    showNextWord();
-  } else {
-    audioEl.onloadedmetadata = showNextWord;
-  }
+  audioEl.onended = () => {
+    showButtons();
+  };
 }
+
+function showButtons() {
+  if (buttonBox.style.display === 'block') return;
+  buttonBox.innerHTML = `
+    <button onclick="showPopup('holt')">What’s a Holt?</button>
+    <button onclick="showPopup('fact')">Did You Know?</button>
+  `;
+  buttonBox.style.display = 'block';
+}
+
+// -------------------------------------- RENDER --------------------------------------
 
 function render(timestamp, frame) {
   const session = renderer.xr.getSession();
@@ -138,8 +145,9 @@ function render(timestamp, frame) {
   renderer.render(scene, camera);
 }
 
-// ---------------- popup ----------------
-window.showPopup = function(type) {
+// -------------------------------------- POPUP --------------------------------------
+
+window.showPopup = function (type) {
   const popup = document.getElementById('popupOverlay');
   const content = document.getElementById('popupText');
 
