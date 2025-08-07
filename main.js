@@ -1,6 +1,5 @@
-import * as THREE from 'https://unpkg.com/three@0.166.0/build/three.module.js';
-import { ARButton } from 'https://unpkg.com/three@0.166.0/examples/jsm/webxr/ARButton.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.166.0/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from './libs/three.module.js';
+import { ARButton } from './libs/ARButton.js';
 
 let camera, scene, renderer, controller, reticle, cube;
 let hitTestSource = null;
