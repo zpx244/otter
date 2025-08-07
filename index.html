@@ -5,16 +5,19 @@
   <title>Otter AR – Node 1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { margin: 0; overflow: hidden; font-family: 'Helvetica Neue', sans-serif; }
+    body { margin: 0; overflow: hidden; font-family: 'Helvetica Neue', Arial, sans-serif; }
     canvas { display: block; }
 
+    /* Info box：限制宽高，允许滚动 */
     #infoBox {
       display: none;
       position: absolute;
       top: 20px;
       left: 20px;
-      width: 60vw;
-      background: rgba(255, 255, 255, 0.1);
+      width: min(90vw, 640px);
+      max-height: 45vh;             /* 关键：别太高 */
+      overflow: auto;               /* 关键：超出滚动 */
+      background: rgba(255, 255, 255, 0.10);
       backdrop-filter: blur(8px);
       padding: 16px;
       border-radius: 12px;
@@ -22,6 +25,15 @@
       font-size: 15px;
       line-height: 1.5;
       z-index: 10;
+      box-sizing: border-box;
+    }
+
+    /* 文字：保留空格换行 + 可断长词 */
+    #narrationText{
+      margin-top: 8px;
+      white-space: pre-wrap;     /* 保留空格/换行 */
+      word-break: break-word;    /* 长词可断行 */
+      overflow-wrap: anywhere;   /* 兜底断行 */
     }
 
     #closeBtn {
@@ -37,8 +49,7 @@
       display: none;
       position: fixed;
       top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.4);
       backdrop-filter: blur(4px);
       z-index: 20;
@@ -73,6 +84,17 @@
       font-size: 14px;
       cursor: pointer;
     }
+
+    /* 逐字淡入：用 inline，避免影响换行 */
+    .char{
+      opacity: 0;
+      display: inline;
+      animation: fadeInChar .25s forwards;
+    }
+    @keyframes fadeInChar{
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -92,8 +114,8 @@
     </div>
   </div>
 
-  <!-- Audio (hidden) -->
-  <audio id="narrationAudio" src=""></audio>
+  <!-- Audio -->
+  <audio id="narrationAudio" src="./assets/audio/node1.mp3" preload="metadata"></audio>
 
   <!-- Main JS -->
   <script type="module" src="./main.js"></script>
