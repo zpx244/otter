@@ -5,15 +5,12 @@ let camera, scene, renderer, controller, reticle, cube;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
 
-const infoBoxEl   = document.getElementById('infoBox');
+const infoBoxEl = document.getElementById('infoBox');
 const narrationEl = document.getElementById('narrationText');
-const buttonBox   = document.getElementById('extraButtons');
-const audioEl     = document.getElementById('narrationAudio');
+const buttonBox = document.getElementById('extraButtons');
+const audioEl = document.getElementById('narrationAudio');
 
 const narrationText = `The first light of day breaks over rooftops. Beneath the brambles, I stir. My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows. The stream here is narrow, but it smells of life—earth, leaf, dew. I slide into the water. Today, like every day, I must patrol, mark, and feed. The city is loud, but I know where to listen. This river is mine. For now.`;
-
-let audioReady = false;
-audioEl.addEventListener('loadedmetadata', () => { audioReady = true; });
 
 init();
 
@@ -59,8 +56,8 @@ function onSelect() {
     new THREE.BoxGeometry(0.2, 0.2, 0.2),
     new THREE.MeshStandardMaterial({ color: 0x00ffcc })
   );
-  cube.position.setFromMatrixPosition(reticle.matrix);
   scene.add(cube);
+  cube.position.setFromMatrixPosition(reticle.matrix);
 
   infoBoxEl.style.display = 'block';
   narrationEl.innerHTML = '';
@@ -70,50 +67,28 @@ function onSelect() {
 }
 
 function playNarration() {
-  const chars = Array.from(narrationText); // 兼容多字节字符
-  const startTyping = () => {
-    // 用音频时长决定总时长，拿不到则回退 30s
-    const durationSec = (audioEl.duration && !isNaN(audioEl.duration)) ? audioEl.duration : 30;
-    const totalTimeMs = durationSec * 1000;
-    // 打字间隔（逐字），加个下限防太快
-    const delay = Math.max(12, totalTimeMs / Math.max(chars.length, 1));
+  const chars = narrationText.split('');
+  const duration = audioEl.duration || 30; // fallback
+  const totalTime = duration * 1000;
+  const delay = totalTime / chars.length;
 
-    // 音频结束后再显示按钮，保证同步
-    audioEl.onended = () => showButtons();
+  let index = 0;
 
-    let index = 0;
-    function revealNextChar() {
-      if (index >= chars.length) return;
-
-      const ch = chars[index];
-      if (ch === ' ') {
-        narrationEl.appendChild(document.createTextNode(' ')); // 保留空格，允许正常换行
-      } else {
-        const span = document.createElement('span');
-        span.className = 'char';    // 用你在 CSS 里定义的淡入动画
-        span.textContent = ch;      // 安全设置字符
-        narrationEl.appendChild(span);
-      }
-
-      index++;
-      setTimeout(revealNextChar, delay);
+  function revealNextChar() {
+    if (index >= chars.length) {
+      showButtons();
+      return;
     }
-
-    // 播放音频（已由用户点击触发，iOS 一般允许）
-    audioEl.play().catch(err => console.warn('Audio play blocked or error:', err));
-    revealNextChar();
-  };
-
-  if (audioReady || (audioEl.duration && !isNaN(audioEl.duration))) {
-    startTyping();
-  } else {
-    // 等元数据，兜底 2s 后也开始，避免卡住
-    const onMeta = () => { audioEl.removeEventListener('loadedmetadata', onMeta); startTyping(); };
-    audioEl.addEventListener('loadedmetadata', onMeta);
-    setTimeout(() => {
-      if (!audioReady) startTyping();
-    }, 2000);
+    const span = document.createElement('span');
+    span.className = 'char';
+    span.innerHTML = chars[index] === ' ' ? '&nbsp;' : chars[index];
+    narrationEl.appendChild(span);
+    index++;
+    setTimeout(revealNextChar, delay);
   }
+
+  audioEl.play();
+  revealNextChar();
 }
 
 function showButtons() {
@@ -128,7 +103,9 @@ function render(timestamp, frame) {
   const session = renderer.xr.getSession();
   if (session && !hitTestSourceRequested) {
     session.requestReferenceSpace('viewer').then(refSpace => {
-      session.requestHitTestSource({ space: refSpace }).then(source => hitTestSource = source);
+      session.requestHitTestSource({ space: refSpace }).then(source => {
+        hitTestSource = source;
+      });
     });
     session.addEventListener('end', () => {
       hitTestSource = null;
