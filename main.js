@@ -4,13 +4,39 @@ import { ARButton } from './libs/ARButton.js';
 let camera, scene, renderer, controller, reticle, cube;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
-
 const infoBoxEl = document.getElementById('infoBox');
 const narrationEl = document.getElementById('narrationText');
 const buttonBox = document.getElementById('extraButtons');
 const audioEl = document.getElementById('narrationAudio');
 
-const narrationText = `The first light of day breaks over rooftops. Beneath the brambles, I stir. My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows. The stream here is narrow, but it smells of life—earth, leaf, dew. I slide into the water. Today, like every day, I must patrol, mark, and feed. The city is loud, but I know where to listen. This river is mine. For now.`;
+// ---- Define narration text/audio steps ----
+const narrationSteps = [
+  {
+    text: "The first light of day breaks over rooftops. Beneath the brambles, I stir.",
+    audio: "./assets/audio/step1.mp3",
+    duration: 4000
+  },
+  {
+    text: "My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows.",
+    audio: "./assets/audio/step2.mp3",
+    duration: 4000
+  },
+  {
+    text: "The stream here is narrow, but it smells of life—earth, leaf, dew.",
+    audio: "./assets/audio/step3.mp3",
+    duration: 4000
+  },
+  {
+    text: "I slide into the water. Today, like every day, I must patrol, mark, and feed.",
+    audio: "./assets/audio/step4.mp3",
+    duration: 5000
+  },
+  {
+    text: "The city is loud, but I know where to listen. This river is mine. For now.",
+    audio: "./assets/audio/step5.mp3",
+    duration: 5000
+  }
+];
 
 init();
 
@@ -56,69 +82,65 @@ function onSelect() {
     new THREE.BoxGeometry(0.2, 0.2, 0.2),
     new THREE.MeshStandardMaterial({ color: 0x00ffcc })
   );
-  scene.add(cube);
+  cube.name = 'Otter (placeholder cube)';
   cube.position.setFromMatrixPosition(reticle.matrix);
+  scene.add(cube);
 
   infoBoxEl.style.display = 'block';
   narrationEl.innerHTML = '';
   buttonBox.style.display = 'none';
-
-  playNarration();
+  playNarrationSequence();
 }
 
-function playNarration() {
-  const chars = narrationText.split('');
-  const duration = audioEl.duration || 30; // fallback
-  const totalTime = duration * 1000;
-  const delay = totalTime / chars.length;
-
+function playNarrationSequence() {
   let index = 0;
 
-  function revealNextChar() {
-    if (index >= chars.length) {
-      showButtons();
+  function playNext() {
+    if (index >= narrationSteps.length) {
+      buttonBox.innerHTML = `
+        <button onclick="showPopup('holt')">What’s a Holt?</button>
+        <button onclick="showPopup('fact')">Did You Know?</button>
+      `;
+      buttonBox.style.display = 'block';
       return;
     }
-    const span = document.createElement('span');
-    span.className = 'char';
-    span.innerHTML = chars[index] === ' ' ? '&nbsp;' : chars[index];
-    narrationEl.appendChild(span);
+
+    const step = narrationSteps[index];
+    narrationEl.innerHTML += `<p>${step.text}</p>`;
+    audioEl.src = step.audio;
+    audioEl.play();
+
     index++;
-    setTimeout(revealNextChar, delay);
+    setTimeout(playNext, step.duration + 500);
   }
 
-  audioEl.play();
-  revealNextChar();
-}
-
-function showButtons() {
-  buttonBox.innerHTML = `
-    <button onclick="showPopup('holt')">What’s a Holt?</button>
-    <button onclick="showPopup('fact')">Did You Know?</button>
-  `;
-  buttonBox.style.display = 'block';
+  playNext();
 }
 
 function render(timestamp, frame) {
   const session = renderer.xr.getSession();
+
   if (session && !hitTestSourceRequested) {
-    session.requestReferenceSpace('viewer').then(refSpace => {
-      session.requestHitTestSource({ space: refSpace }).then(source => {
+    session.requestReferenceSpace('viewer').then((refSpace) => {
+      session.requestHitTestSource({ space: refSpace }).then((source) => {
         hitTestSource = source;
       });
     });
+
     session.addEventListener('end', () => {
-      hitTestSource = null;
       hitTestSourceRequested = false;
+      hitTestSource = null;
     });
+
     hitTestSourceRequested = true;
   }
 
   if (frame && hitTestSource) {
     const referenceSpace = renderer.xr.getReferenceSpace();
-    const hits = frame.getHitTestResults(hitTestSource);
-    if (hits.length > 0) {
-      const pose = hits[0].getPose(referenceSpace);
+    const hitTestResults = frame.getHitTestResults(hitTestSource);
+    if (hitTestResults.length > 0) {
+      const hit = hitTestResults[0];
+      const pose = hit.getPose(referenceSpace);
       reticle.visible = true;
       reticle.matrix.fromArray(pose.transform.matrix);
     } else {
@@ -131,7 +153,7 @@ function render(timestamp, frame) {
   renderer.render(scene, camera);
 }
 
-// Popup
+// ---------------- popup ----------------
 window.showPopup = function(type) {
   const popup = document.getElementById('popupOverlay');
   const content = document.getElementById('popupText');
