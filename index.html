@@ -8,21 +8,48 @@
     body { margin: 0; overflow: hidden; font-family: 'Helvetica Neue', sans-serif; }
     canvas { display: block; }
 
-    #infoBox {
-      display: none;
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      width: 60vw;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(8px);
-      padding: 16px;
-      border-radius: 12px;
-      color: #fff;
-      font-size: 15px;
-      line-height: 1.5;
-      z-index: 10;
-    }
+  #infoBox{
+  position:absolute;
+  top: env(safe-area-inset-top,20px);
+  left: 20px;
+  right: 20px;              /* 小屏更灵活 */
+  width: auto;              /* 不固定 60vw 了 */
+  max-width: 640px;
+  max-height: 48vh;         /* 关键：限制高度 */
+  overflow: auto;           /* 超出滚动 */
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.10);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  padding:16px;
+  border-radius:12px;
+  color:#fff;
+  font-size: clamp(14px, 1.8vw, 16px); /* 小屏自动变小 */
+  line-height: 1.55;
+  z-index: 10;
+}
+
+#narrationText{
+  margin-top:8px;
+  white-space: pre-wrap;     /* 保留空格/换行 */
+  word-break: break-word;    /* 长词断行 */
+  overflow-wrap: anywhere;   /* 兜底断行 */
+}
+
+.char{
+  opacity: 0;
+  display: inline;           /* 不要 inline-block，利于换行 */
+  animation: fadeInChar .25s forwards;
+}
+@keyframes fadeInChar{
+  from { opacity:0; transform: translateY(6px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* 小屏手机进一步收紧左右边距 */
+@media (max-width: 420px){
+  #infoBox{ left:12px; right:12px; }
+}
 
     #closeBtn {
       float: right;
