@@ -1,42 +1,28 @@
 import * as THREE from './libs/three.module.js';
 import { ARButton } from './libs/ARButton.js';
+import { GLTFLoader } from './libs/GLTFLoader.js'; // 新增：本地模块
 
-let camera, scene, renderer, controller, reticle, cube;
+let camera, scene, renderer, controller, reticle;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
+
+// 新增：模型与动画
+let otter = null;
+let mixer = null;
+const clock = new THREE.Clock();
+
 const infoBoxEl = document.getElementById('infoBox');
 const narrationEl = document.getElementById('narrationText');
 const buttonBox = document.getElementById('extraButtons');
 const audioEl = document.getElementById('narrationAudio');
 
-// ---- Define narration text/audio steps ----
-const narrationSteps = [
-  {
-    text: "The first light of day breaks over rooftops. Beneath the brambles, I stir.",
-    audio: "./assets/audio/step1.mp3",
-    duration: 4000
-  },
-  {
-    text: "My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows.",
-    audio: "./assets/audio/step2.mp3",
-    duration: 4000
-  },
-  {
-    text: "The stream here is narrow, but it smells of life—earth, leaf, dew.",
-    audio: "./assets/audio/step3.mp3",
-    duration: 4000
-  },
-  {
-    text: "I slide into the water. Today, like every day, I must patrol, mark, and feed.",
-    audio: "./assets/audio/step4.mp3",
-    duration: 5000
-  },
-  {
-    text: "The city is loud, but I know where to listen. This river is mine. For now.",
-    audio: "./assets/audio/step5.mp3",
-    duration: 5000
-  }
-];
+const narrationText = `The first light of day breaks over rooftops. Beneath the brambles, I stir. My holt is hidden from human eyes, tucked deep in the upper Bride’s shadows. The stream here is narrow, but it smells of life—earth, leaf, dew. I slide into the water. Today, like every day, I must patrol, mark, and feed. The city is loud, but I know where to listen. This river is mine. For now.`;
+
+// 预加载音频元数据，避免 duration 为 0
+let audioReady = false;
+audioEl.addEventListener('loadedmetadata', () => {
+  audioReady = true;
+});
 
 init();
 
@@ -54,7 +40,9 @@ function init() {
   renderer.xr.enabled = true;
   document.body.appendChild(renderer.domElement);
 
-  document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+  document.body.appendChild(
+    ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] })
+  );
 
   controller = renderer.xr.getController(0);
   controller.addEventListener('select', onSelect);
@@ -76,71 +64,112 @@ function init() {
 }
 
 function onSelect() {
-  if (!reticle.visible || cube) return;
+  if (!reticle.visible || otter) return;
 
-  cube = new THREE.Mesh(
-    new THREE.BoxGeometry(0.2, 0.2, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0x00ffcc })
+  // 加载 GLB 模型替代方块
+  const loader = new GLTFLoader();
+  loader.load(
+    './assets/models/otter.glb',
+    (gltf) => {
+      otter = gltf.scene;
+      otter.position.setFromMatrixPosition(reticle.matrix);
+      // 按需调整体型
+      otter.scale.set(0.2, 0.2, 0.2);
+      // 让水獭头部朝向摄像机的前方（可按需要调整朝向）
+      otter.rotation.y = 0;
+      scene.add(otter);
+
+      // 动画
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(otter);
+        const action = mixer.clipAction(gltf.animations[0]); // 先播第一个
+        action.play();
+      }
+
+      infoBoxEl.style.display = 'block';
+      narrationEl.innerHTML = '';
+      buttonBox.style.display = 'none';
+      playNarration();
+    },
+    undefined,
+    (err) => {
+      console.error('GLB load error:', err);
+    }
   );
-  cube.name = 'Otter (placeholder cube)';
-  cube.position.setFromMatrixPosition(reticle.matrix);
-  scene.add(cube);
-
-  infoBoxEl.style.display = 'block';
-  narrationEl.innerHTML = '';
-  buttonBox.style.display = 'none';
-  playNarrationSequence();
 }
 
-function playNarrationSequence() {
-  let index = 0;
+function playNarration() {
+  // 确保有音频长度
+  const startTyping = () => {
+    const chars = narrationText.split('');
+    // 若还拿不到 duration，则使用回退时长（30s）
+    const duration = audioEl.duration && !isNaN(audioEl.duration) ? audioEl.duration : 30;
+    const totalTime = duration * 1000;
+    const delay = totalTime / chars.length;
 
-  function playNext() {
-    if (index >= narrationSteps.length) {
-      buttonBox.innerHTML = `
-        <button onclick="showPopup('holt')">What’s a Holt?</button>
-        <button onclick="showPopup('fact')">Did You Know?</button>
-      `;
-      buttonBox.style.display = 'block';
-      return;
+    // 音频结束时再显示按钮
+    audioEl.onended = () => {
+      showButtons();
+    };
+
+    let index = 0;
+    function revealNextChar() {
+      if (index >= chars.length) return;
+      const span = document.createElement('span');
+      span.className = 'char';
+      span.innerHTML = chars[index] === ' ' ? '&nbsp;' : chars[index];
+      narrationEl.appendChild(span);
+      index++;
+      setTimeout(revealNextChar, delay);
     }
 
-    const step = narrationSteps[index];
-    narrationEl.innerHTML += `<p>${step.text}</p>`;
-    audioEl.src = step.audio;
-    audioEl.play();
+    audioEl.play().catch(err => {
+      // iOS 如需用户手势触发播放，这里可能报错；你已用 tap 触发了 onSelect，一般可播放
+      console.warn('Autoplay blocked or error:', err);
+    });
+    revealNextChar();
+  };
 
-    index++;
-    setTimeout(playNext, step.duration + 500);
+  if (audioReady || (audioEl.duration && !isNaN(audioEl.duration))) {
+    startTyping();
+  } else {
+    // 等待元数据
+    audioEl.addEventListener('loadedmetadata', startTyping, { once: true });
+    // 兜底：如果 metadata 一直没来，2秒后也开始
+    setTimeout(() => {
+      if (!audioReady) startTyping();
+    }, 2000);
   }
+}
 
-  playNext();
+function showButtons() {
+  buttonBox.innerHTML = `
+    <button onclick="showPopup('holt')">What’s a Holt?</button>
+    <button onclick="showPopup('fact')">Did You Know?</button>
+  `;
+  buttonBox.style.display = 'block';
 }
 
 function render(timestamp, frame) {
   const session = renderer.xr.getSession();
-
   if (session && !hitTestSourceRequested) {
-    session.requestReferenceSpace('viewer').then((refSpace) => {
-      session.requestHitTestSource({ space: refSpace }).then((source) => {
+    session.requestReferenceSpace('viewer').then(refSpace => {
+      session.requestHitTestSource({ space: refSpace }).then(source => {
         hitTestSource = source;
       });
     });
-
     session.addEventListener('end', () => {
-      hitTestSourceRequested = false;
       hitTestSource = null;
+      hitTestSourceRequested = false;
     });
-
     hitTestSourceRequested = true;
   }
 
   if (frame && hitTestSource) {
     const referenceSpace = renderer.xr.getReferenceSpace();
-    const hitTestResults = frame.getHitTestResults(hitTestSource);
-    if (hitTestResults.length > 0) {
-      const hit = hitTestResults[0];
-      const pose = hit.getPose(referenceSpace);
+    const hits = frame.getHitTestResults(hitTestSource);
+    if (hits.length > 0) {
+      const pose = hits[0].getPose(referenceSpace);
       reticle.visible = true;
       reticle.matrix.fromArray(pose.transform.matrix);
     } else {
@@ -148,12 +177,21 @@ function render(timestamp, frame) {
     }
   }
 
-  if (cube) cube.position.z -= 0.002;
+  // 更新动画
+  if (mixer) {
+    const delta = clock.getDelta();
+    mixer.update(delta);
+  }
+
+  // 简单前进模拟“游动/行进”（按需保留/删除）
+  if (otter) {
+    otter.position.z -= 0.002;
+  }
 
   renderer.render(scene, camera);
 }
 
-// ---------------- popup ----------------
+// Popup
 window.showPopup = function(type) {
   const popup = document.getElementById('popupOverlay');
   const content = document.getElementById('popupText');
