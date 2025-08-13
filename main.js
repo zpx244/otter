@@ -53,18 +53,21 @@ function init() {
 function onSelect() {
   if (!reticle.visible || cube) return;
 
-  cube = new THREE.Mesh(
-    new THREE.BoxGeometry(0.2, 0.2, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0x00ffcc })
-  );
-  scene.add(cube);
-  cube.position.setFromMatrixPosition(reticle.matrix);
+  const loader = new GLTFLoader();
+  loader.load('assets/models/otter.glb', (gltf) => {
+    cube = gltf.scene;
+    cube.scale.set(0.3, 0.3, 0.3); // 可根据需要调整比例
+    cube.position.setFromMatrixPosition(reticle.matrix);
+    scene.add(cube);
 
-  infoBoxEl.style.display = 'block';
-  narrationEl.innerHTML = '';
-  buttonBox.style.display = 'none';
+    infoBoxEl.style.display = 'block';
+    narrationEl.innerHTML = '';
+    buttonBox.style.display = 'none';
 
-  playNarration();
+    playNarration();
+  }, undefined, (error) => {
+    console.error('Error loading otter.glb:', error);
+  });
 }
 
 function playNarration() {
